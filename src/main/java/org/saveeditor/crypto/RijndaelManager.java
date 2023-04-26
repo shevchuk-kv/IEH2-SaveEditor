@@ -2,7 +2,6 @@ package org.saveeditor.crypto;
 
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.RijndaelEngine;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
@@ -14,15 +13,17 @@ public class RijndaelManager {
 
     public RijndaelManager() {
         engine = new RijndaelEngine();
-        BufferedBlockCipher cipher = new PaddedBufferedBlockCipher(new CBCBlockCipher(engine));
-    }
-
-    public int transformFinalBlock(byte[] out, int len) throws InvalidCipherTextException, DataLengthException, IllegalStateException {
-        return cipher.doFinal(out, len);
+        cipher = new PaddedBufferedBlockCipher(new CBCBlockCipher(engine));
     }
 
     public void init(CipherMode mode, CipherParameters cipherParameters) throws IllegalArgumentException{
-        boolean isEncryption = CipherMode.Encrypt.equals(mode);
-        cipher.init(isEncryption, cipherParameters);
+        cipher.init(mode.isEncryption(), cipherParameters);
+    }
+
+    public byte[] transform(byte[] decodedBase64Data) throws InvalidCipherTextException {
+        byte[] resultData = new byte[cipher.getOutputSize(decodedBase64Data.length)];
+        int len = cipher.processBytes(decodedBase64Data, 0, decodedBase64Data.length, resultData, 0);
+        cipher.doFinal(resultData, len);
+        return resultData;
     }
 }
